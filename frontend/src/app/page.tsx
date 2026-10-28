@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 export default function ChatPage() {
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState<{ role: string; content: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ export default function ChatPage() {
       const res = await fetch("http://localhost:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: "00000000-0000-0000-0000-000000000000", message: userMsg }),
+        body: JSON.stringify({ session_id: sessionId, message: userMsg }),
       });
       const data = await res.json();
       setChatLog((prev) => [...prev, { role: "assistant", content: data.response }]);
@@ -37,7 +38,7 @@ export default function ChatPage() {
       <div className="flex flex-col gap-4 overflow-y-auto flex-1">
         <h1 className="text-xl font-bold">AI Developer Assistant</h1>
         {chatLog.map((log, index) => (
-          <div key={index} className={`p-3 rounded-lg ${log.role === "user" ? "bg-blue-100 self-end" : "bg-gray-100 self-start"}`}>
+          <div key={index} className={`p-3 rounded-lg text-gray-900 ${log.role === "user" ? "bg-blue-100 self-end" : "bg-gray-100 self-start"}`}>
             <strong>{log.role}: </strong> {log.content}
           </div>
         ))}
