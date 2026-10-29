@@ -1,12 +1,49 @@
 "use client"
 
-import { useState } from "react";
+import { useState , useEffect } from "react";
+import { fetchSessions, createSession, sendChatMessage } from "@/lib/api";
+
+interface SessionItem {
+  session_id: string;
+  title: string;
+  created_at: string;
+}
 
 export default function ChatPage() {
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState<{ role: string; content: string }[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  async function loadSessions() {
+    try {
+      const list = await fetchSessions();
+      setSessions(list);
+      if (list.length > 0 && !sessionId) {
+        setSessionId(list[0].session_id); // Default to the latest session
+      } else if (list.length === 0) {
+        handleNewSession();
+      }
+    } catch (err) {
+      console.error("Error loading sessions:", err);
+    }
+  }
+
+  async function handleNewSession() {
+    try {
+      const data = await createSession();
+      setSessionId(data.session_id);
+      setChatLog([]);
+      await loadSessions();
+    } catch (err) {
+      console.error("Failed to create session:", err);
+    }
+  }
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
