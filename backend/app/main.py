@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import chat, runs, health
+from backend.app.api import chat, runs, health , session
 from backend.app.db.session import engine, Base
 
 Base.metadata.create_all(bind=engine)
@@ -18,3 +18,8 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api", tags=["Chat"])
 app.include_router(runs.router, prefix="/api", tags=["Runs"])
 app.include_router(health.router, prefix="/api", tags=["Health"])
+app.include_router(session.router, prefix="/api",tags=["session"])
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
