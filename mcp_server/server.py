@@ -1,17 +1,42 @@
 from mcp.server.fastmcp import FastMCP
+import json
 
-mcp = FastMCP("GitHub Assistant MCP")
+mcp = FastMCP("Developer Assistant MCP")
+
+# Mock dataset of GitHub issues
+GITHUB_ISSUES = [
+    {
+        "id": 101,
+        "title": "WebSocket client drops connection under heavy load",
+        "tags": ["WebSocket", "reconnection", "network"],
+        "status": "open",
+        "description": "Clients lose connection when event loops spike above 50ms."
+    },
+    {
+        "id": 102,
+        "title": "PostgreSQL connection pool exhaustion",
+        "tags": ["PostgreSQL", "database", "scaling"],
+        "status": "closed",
+        "description": "Async sessions were not being closed properly in FastAPI dependencies."
+    },
+    {
+        "id": 103,
+        "title": "Automatic reconnection retry logic failing",
+        "tags": ["reconnection", "frontend", "websocket"],
+        "status": "open",
+        "description": "Exponential backoff timer resets prematurely on network drops."
+    }
+]
 
 @mcp.tool()
 def search_github_issues(query: str) -> str:
-    """Search GitHub issues for a given query string."""
-    # Mock implementation for initial end-to-end testing
-    mock_issues = [
-        {"id": 101, "title": "Fix WebSocket reconnection bug", "state": "open"},
-        {"id": 102, "title": "Optimize PostgreSQL connection pool", "state": "closed"}
+    """Search mock GitHub issues by keyword or tag."""
+    query_lower = query.lower()
+    results = [
+        issue for issue in GITHUB_ISSUES
+        if query_lower in issue["title"].lower() or any(query_lower in tag.lower() for tag in issue["tags"])
     ]
-    matched = [i for i in mock_issues if query.lower() in i["title"].lower()]
-    return str(matched if matched else "No issues found.")
+    return json.dumps(results if results else [{"message": "No matching GitHub issues found."}])
 
 if __name__ == "__main__":
     mcp.run()

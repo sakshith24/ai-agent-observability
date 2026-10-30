@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.app.db.session import get_db
-from backend.app.models.models import AgentRun, ExecutionEvent, Session as ChatSession
+from backend.app.models.models import AgentRun, ExecutionEvent, Session as ChatSession , Message
 
 router = APIRouter()
 
@@ -24,6 +24,14 @@ def start_chat(payload: ChatRequest, db: Session = Depends(get_db)):
     db_session = db.query(ChatSession).filter(ChatSession.id == session_uuid).first()
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found. Please create a session first.")
+
+    user_msg = Message(
+        session_id=db_session.id,
+        role="user",
+        content=payload.message
+    )
+    db.add(user_msg)
+    db.commit()
             
     # 2. Create Agent Run linked to the verified session
     run = AgentRun(session_id=db_session.id, status="running")
@@ -42,7 +50,19 @@ def start_chat(payload: ChatRequest, db: Session = Depends(get_db)):
     run.status = "completed"
     db.commit()
 
+    response_text = f"Processed query '{payload.message}' using MCP tool successfully."
+
+    assistant_msg = Message(
+        session_id=db_session.id,
+        role="assistant",
+        content=response_text
+    )
+    db.add(assistant_msg)
+    db.commit()
+
+
     return {
+        "session_id":str(db_session.id),
         "run_id": str(run.id),
-        "response": f"Processed query '{payload.message}' using MCP tool successfully."
+        "response": response_text
     }

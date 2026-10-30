@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON , Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from backend.app.db.session import Base
 
 class Session(Base):
@@ -9,6 +10,9 @@ class Session(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    messages = relationship("Message", back_populates="session", cascade="all, delete-orphan")
+    runs = relationship("AgentRun", back_populates="session", cascade="all, delete-orphan")
 
 class Message(Base):
     __tablename__ = "messages"
@@ -18,6 +22,8 @@ class Message(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    session = relationship("Session", back_populates="messages")
+
 class AgentRun(Base):
     __tablename__ = "agent_runs"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -26,6 +32,9 @@ class AgentRun(Base):
     duration_ms = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    session = relationship("Session", back_populates="runs")
+    events = relationship("ExecutionEvent", back_populates="run", cascade="all, delete-orphan")
+
 class ExecutionEvent(Base):
     __tablename__ = "execution_events"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -33,3 +42,5 @@ class ExecutionEvent(Base):
     event_type = Column(String(50), nullable=False) # llm_call, mcp_tool_call, error
     payload = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    run = relationship("AgentRun", back_populates="events")
