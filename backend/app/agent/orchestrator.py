@@ -1,16 +1,38 @@
 import json
 import logging
-
+import time
 from backend.app.agent.context import build_agent_context
 from backend.app.agent.mcp_client import get_mcp_tools
 from backend.app.agent.llm_client import (get_llm_response,convert_mcp_tools_to_openai)
 from backend.app.agent.tool_dispatcher import dispatch_tool
-from backend.app.models.models import ExecutionEvent
+from backend.app.models.models import ExecutionEvent , AgentRun
 
 
 logger = logging.getLogger(__name__)
 
+def log_event(
+    db_session,
+    run_id,
+    trace_id,
+    event_type,
+    status,
+    payload=None,
+    duration_ms=None
+):
+    """Save an execution event to PostgreSQL."""
 
+    event = ExecutionEvent(
+        run_id=run_id,
+        trace_id=trace_id,
+        event_type=event_type,
+        status=status,
+        payload=payload or {},
+        duration_ms=duration_ms
+    )
+
+    db_session.add(event)
+    db_session.commit()
+    
 async def run_agent_orchestrator(
     session_id,
     db_session,

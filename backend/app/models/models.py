@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON , Integer
+from datetime import datetime, timezone
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -28,6 +29,7 @@ class AgentRun(Base):
     __tablename__ = "agent_runs"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    trace_id = Column(String, unique=True, nullable=False, default=lambda: str(uuid.uuid4()), index=True)
     status = Column(String(50), default="running") # running, completed, failed
     duration_ms = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -37,10 +39,21 @@ class AgentRun(Base):
 
 class ExecutionEvent(Base):
     __tablename__ = "execution_events"
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    run_id = Column(UUID(as_uuid=True), ForeignKey("agent_runs.id"), nullable=False)
-    event_type = Column(String(50), nullable=False) # llm_call, mcp_tool_call, error
-    payload = Column(JSON, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    run = relationship("AgentRun", back_populates="events")
+    id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
+
+    run_id = Column(UUID(as_uuid=True),ForeignKey("agent_runs.id"),nullable=False)
+
+    trace_id = Column(String(36),nullable=False,index=True)
+
+    event_type = Column(String(50),nullable=False)
+
+    status = Column(String(50),nullable=False)
+
+    duration_ms = Column(Integer,nullable=True)
+
+    payload = Column(JSON,nullable=False,default=dict)
+
+    created_at = Column(DateTime(timezone=True),server_default=func.now(),nullable=False,index=True)
+
+    run = relationship("AgentRun",back_populates="events")

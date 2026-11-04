@@ -1,6 +1,7 @@
 
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
+import time
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -69,6 +70,7 @@ async def start_chat(
 
     try:
         # 5. Invoke the LLM-based orchestrator
+        start_time = time.perf_counter()
         response_text = await run_agent_orchestrator(
             session_id=chat_session.id,
             db_session=db,
@@ -84,6 +86,9 @@ async def start_chat(
 
         db.add(assistant_msg)
 
+        # in millisec
+        run.duration_ms = int((time.perf_counter() - start_time) * 1000)
+
         # 7. Mark agent run as completed
         run.status = "completed"
         db.commit()
@@ -91,7 +96,8 @@ async def start_chat(
         return {
             "session_id": str(chat_session.id),
             "run_id": str(run.id),
-            "response": response_text
+            "response": response_text,
+            "duration_ms": run.duration_ms
         }
 
     except Exception:
