@@ -80,7 +80,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 text-sm">
-                {data?.recent_runs.map((run) => (
+                {(data?.recent_runs || []).map((run) => (
                   <tr key={run.id} className="hover:bg-gray-850">
                     <td className="p-4 font-mono text-xs text-blue-400">{run.trace_id}</td>
                     <td className="p-4">

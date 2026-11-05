@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -23,7 +23,7 @@ interface RunDetails {
   events: ExecutionEvent[];
 }
 
-export default function RunDetailsPage() {
+function RunDetailsContent() {
   const params = useParams();
   const runId = params.id;
   const [run, setRun] = useState<RunDetails | null>(null);
@@ -31,7 +31,8 @@ export default function RunDetailsPage() {
 
   useEffect(() => {
     if (!runId) return;
-    fetch(`http://localhost:8000/api/observability/runs/${runId}`)
+    // Change this line:
+    fetch(`http://localhost:8000/api/runs/${runId}`)
       .then((res) => res.json())
       .then((data) => {
         setRun(data);
@@ -80,7 +81,7 @@ export default function RunDetailsPage() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Timeline & Execution Events</h2>
           <div className="space-y-3">
-            {run.events.map((event, index) => (
+            {(run.events || []).map((event, index) => (
               <div key={event.id} className="bg-gray-900 border border-gray-800 p-5 rounded-xl space-y-3">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-3">
@@ -115,5 +116,13 @@ export default function RunDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RunDetailsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-gray-400 bg-gray-950 min-h-screen">Loading run details...</div>}>
+      <RunDetailsContent />
+    </Suspense>
   );
 }
